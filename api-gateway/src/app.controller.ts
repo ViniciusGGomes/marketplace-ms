@@ -1,0 +1,32 @@
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+import { ProxyService } from './proxy/service/proxy.service';
+import { Roles } from './auth/decorators/roles.decorator';
+
+@Controller()
+export class AppController {
+  constructor(
+    private readonly appService: AppService,
+    private readonly proxyService: ProxyService,
+  ) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+
+  @Get('/health')
+  @Roles('user', 'admin')
+  async getHealth() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: {
+        users: await this.proxyService.getServiceHealth('users'),
+        products: await this.proxyService.getServiceHealth('products'),
+        checkout: await this.proxyService.getServiceHealth('checkout'),
+        payments: await this.proxyService.getServiceHealth('payments'),
+      },
+    };
+  }
+}
