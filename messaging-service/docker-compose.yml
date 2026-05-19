@@ -1,0 +1,27 @@
+services:
+  rabbitmq:
+    # ALTERADO: Atualizado para a versão estável, leve e moderna
+    image: rabbitmq:4.3-management-alpine 
+    container_name: marketplace-rabbitmq
+    environment:
+      # Credenciais padrão (MUDAR EM PRODUÇÃO!)
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672" # AMQP port - porta de comunicação
+      - "15672:15672" # Management UI - painel web de administração
+    volumes:
+      # Persistir dados do RabbitMQ
+      - rabbitmq_data:/var/lib/rabbitmq
+    # Sempre reiniciar se cair
+    restart: unless-stopped
+    healthcheck:
+      # AJUSTADO: Comando compatível e otimizado para a versão 4.x
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# Volume para persistência
+volumes:
+  rabbitmq_data:
