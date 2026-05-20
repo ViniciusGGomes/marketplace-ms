@@ -8,8 +8,8 @@ import * as amqp from 'amqplib';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(RabbitmqService.name);
+export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(RabbitMQService.name);
   private connection: amqp.ChannelModel;
   private channel: amqp.Channel;
 
@@ -80,5 +80,98 @@ export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
 
   getConnections(): amqp.ChannelModel {
     return this.connection;
+  }
+
+  async publishMessage(
+    exchange: string,
+    routingKey: string,
+    message: any,
+  ): Promise<void> {
+    try {
+      if (!this.channel) {
+        this.logger.warn(
+          '⚠️ RabbitMQ channel not available, skipping message publish',
+        );
+
+        return;
+      }
+
+      await this.channel.assertExchange(exchange, 'topic', { durable: true });
+      const messageBuffer = Buffer.from(JSON.stringify(message));
+
+      const published = this.channel.publish(
+        exchange,
+        routingKey,
+        messageBuffer,
+        {
+          persistent: true,
+          timestamp: Date.now(),
+          contentType: 'application/json',
+        },
+      );
+
+      this.logger.log(`✅ Message published to ${exchange}:${routingKey}`);
+      this.logger.debug(`Message content: ${JSON.stringify(message)}`);
+
+      if (!published) {
+        throw new Error('Failed to publish message to RabbitMQ');
+      }
+    } catch (error) {
+      this.logger.error('❌ Error publishing message to RabbitMQ:', error);
+    }
+  }
+
+  async subscribeToQueue(
+    queueName: string,
+    exchange: string,
+    routingKey: string,
+    callback: (message: unknown) => Promise<void>,
+  ): Promise<void> {
+    try {
+      if (!this.channel) {
+        throw new Error('RabbitMQ channel not available');
+      }
+
+      await this.channel.assertExchange(exchange, 'topic', { durable: true });
+
+      const queue = await this.channel.assertQueue(queueName, {
+        durable: true,
+        arguments: {
+          'x-message-ttl': 86400000,
+          'x-max-length': 10000,
+        },
+      });
+
+      await this.channel.bindQueue(queue.queue, exchange, routingKey);
+
+      await this.channel.prefetch(1);
+
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      await this.channel.consume(queue.queue, async (msg) => {
+        if (msg) {
+          try {
+            const message: unknown = JSON.parse(msg.content.toString());
+            this.logger.log(`📨 Message received from queue: ${queueName}`);
+            this.logger.debug(`Message content: ${JSON.stringify(message)}`);
+            await callback(message);
+
+            this.channel.ack(msg);
+
+            this.logger.log(
+              `✅ Message processed succesfully from queue: ${queueName}`,
+            );
+          } catch (error) {
+            this.logger.error(`❌ Error processing message:`, error);
+            this.channel.nack(msg, false, false);
+          }
+        }
+      });
+
+      this.logger.log(
+        `✅ Subscribed to queue: ${queueName} with routing key: ${routingKey}`,
+      );
+    } catch (error) {
+      this.logger.error(`❌ Error subscribing to queue ${queueName}:`, error);
+    }
   }
 }
