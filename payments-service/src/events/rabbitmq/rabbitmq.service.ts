@@ -74,6 +74,19 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     await this.disconnect();
   }
 
+  async waitForConnection(maxAttempts = 10, delayMs = 500): Promise<boolean> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (this.channel) {
+        return true;
+      }
+      this.logger.log(
+        `⏳ Waiting for RabbitMQ connection... (attempt ${attempt}/${maxAttempts})`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return false;
+  }
+
   getChannel(): amqp.Channel {
     return this.channel;
   }
@@ -134,11 +147,29 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
       await this.channel.assertExchange(exchange, 'topic', { durable: true });
 
+      const dlxExchange = `${exchange}.dlx`;
+      await this.channel.assertExchange(dlxExchange, 'topic', {
+        durable: true,
+      });
+
+      const dlqName = `${queueName}.dlq`;
+      await this.channel.assertQueue(dlqName, {
+        durable: true,
+        arguments: {
+          'x-message-ttl': 604800000, // 7 dias para análise
+        },
+      });
+
+      const routingKeyDlq = `${routingKey}.dlq`;
+      await this.channel.bindQueue(dlqName, dlxExchange, routingKeyDlq);
+
       const queue = await this.channel.assertQueue(queueName, {
         durable: true,
         arguments: {
           'x-message-ttl': 86400000,
           'x-max-length': 10000,
+          'x-dead-letter-exchange': dlxExchange,
+          'x-dead-letter-routing-key': routingKeyDlq,
         },
       });
 
@@ -158,11 +189,12 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
             this.channel.ack(msg);
 
             this.logger.log(
-              `✅ Message processed succesfully from queue: ${queueName}`,
+              `✅ Message processed successfully from queue: ${queueName}`,
             );
           } catch (error) {
             this.logger.error(`❌ Error processing message:`, error);
             this.channel.nack(msg, false, false);
+            this.logger.warn(`⚠️ Message sent to DLQ: ${dlqName}`);
           }
         }
       });
