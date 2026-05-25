@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PaymentQueueService } from '../payment-queue/payment-queue.service';
 import { PaymentOrderMessage } from '../payment-queue.interface';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class PaymentConsumerService implements OnModuleInit {
@@ -10,6 +11,7 @@ export class PaymentConsumerService implements OnModuleInit {
   constructor(
     private readonly paymentQueueService: PaymentQueueService,
     private readonly rabbitMQService: RabbitMQService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   private validateMessage(message: PaymentOrderMessage): boolean {
@@ -45,6 +47,7 @@ export class PaymentConsumerService implements OnModuleInit {
   }
 
   private processPaymentOrder(message: PaymentOrderMessage): void {
+    const startTime = Date.now();
     try {
       // Log inicial com informações da mensagem
       this.logger.log(
@@ -62,7 +65,9 @@ export class PaymentConsumerService implements OnModuleInit {
       // TODO: Processar pagamento usando PaymentsService
       // Isso será implementado na próxima aula
       this.logger.log('✅ Payment order received and validated');
+      this.metricsService.updateMetrics(true, startTime, this.logger);
     } catch (error) {
+      this.metricsService.updateMetrics(false, startTime, this.logger);
       // Log de erro com contexto completo
       this.logger.error(
         `❌ Failed to process payment for order ${message.orderId}:`,
@@ -99,6 +104,7 @@ export class PaymentConsumerService implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('🚀 Starting Payment Consumer Service');
+    this.metricsService.metrics.startedAt = new Date();
     await this.startConsuming();
   }
 }
