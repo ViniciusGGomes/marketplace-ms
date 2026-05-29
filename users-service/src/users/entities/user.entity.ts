@@ -30,7 +30,7 @@ export class User {
   @Column({ type: 'enum', enum: UserRole })
   role: UserRole;
 
-  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.active })
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
 
   @CreateDateColumn()
