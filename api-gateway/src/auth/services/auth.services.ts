@@ -3,8 +3,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import { serviceConfig } from 'src/config/gateway.config';
-import { RegisterDto } from '../dtos/register.dto';
-import { LoginDto } from '../dtos/login.sto';
 
 export interface UserSession {
   valid: boolean;
@@ -55,36 +53,6 @@ export class AuthServices {
       return data;
     } catch (error) {
       throw new UnauthorizedException('Invalid Session Token');
-    }
-  }
-
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
-    try {
-      const { data } = await firstValueFrom(
-        this.httpService.post(`${serviceConfig.users.url}/login`, loginDto, {
-          timeout: serviceConfig.users.timeout,
-        }),
-      );
-      return data;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid login credentials');
-    }
-  }
-
-  async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    try {
-      const { data } = await firstValueFrom(
-        this.httpService.post(
-          `${serviceConfig.users.url}/auth/register`,
-          registerDto,
-          {
-            timeout: serviceConfig.users.timeout,
-          },
-        ),
-      );
-      return data;
-    } catch (error) {
-      throw new UnauthorizedException('Registration failed');
     }
   }
 }
