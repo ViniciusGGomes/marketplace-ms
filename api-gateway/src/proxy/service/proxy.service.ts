@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { CircuitBreakerService } from 'src/common/circuit-breaker/circuit-breaker.service';
 import { CacheFallbackService } from 'src/common/fallback/cache.fallback';
@@ -79,7 +79,8 @@ export class ProxyService {
     this.logger.log(`Proxying ${method} request to ${serviceName}: ${url}`);
 
     const fallback = this.creteServiceFallback(serviceName, method, path);
-    // proteção 3: Circuit Breaker
+
+    // Proteção 3: Circuit Breaker
     return this.circuitBreakerService.executeWithCircuitBreaker(
       async () => {
         // Proteção 2: Retry
@@ -97,14 +98,28 @@ export class ProxyService {
 
                 const response = await firstValueFrom(
                   this.httpService.request({
-                    method: method.toLowerCase(),
+                    method: method.toLowerCase() as any,
                     url,
                     data,
                     headers: enhancedHeaders,
                     timeout: service.timeout,
+                    validateStatus: () => true, // 💡 Evita que o Axios quebre em erros 4xx de validação do cliente
                   }),
                 );
 
+                // 🛡️ Se o erro for culpa do usuário (Ex: 400, 401, 403, 404), repassa direto sem abrir o circuito
+                if (response.status >= 400 && response.status < 500) {
+                  throw new HttpException(response.data, response.status);
+                }
+
+                // 🔥 Se o erro for do servidor backend (5xx), joga um erro comum para acionar o Retry/Circuit Breaker
+                if (response.status >= 500) {
+                  throw new Error(
+                    `Upstream ${serviceName} returned ${response.status}`,
+                  );
+                }
+
+                // 💾 Cache inteligente apenas para requisições de leitura bem-sucedidas
                 if (method.toLowerCase() === 'get') {
                   this.cacheFallbackService.setCachedData(
                     `${serviceName}-${path}`,
@@ -117,7 +132,7 @@ export class ProxyService {
               service.timeout,
             );
           },
-          4,
+          3, // 💡 Reduzido para 3 tentativas para evitar gargalos de timeout cumulativos
         );
       },
       `proxy-${serviceName}`,
