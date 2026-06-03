@@ -3,6 +3,8 @@ import { PaymentQueueService } from '../payment-queue/payment-queue.service';
 import { PaymentOrderMessage } from '../payment-queue.interface';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { PaymentsService } from 'src/payments/payments.service';
+import { PaymentResultPublisherService } from '../payment-result-publish/payment-result-publisher.service';
 
 @Injectable()
 export class PaymentConsumerService implements OnModuleInit {
@@ -12,6 +14,8 @@ export class PaymentConsumerService implements OnModuleInit {
     private readonly paymentQueueService: PaymentQueueService,
     private readonly rabbitMQService: RabbitMQService,
     private readonly metricsService: MetricsService,
+    private readonly paymentsService: PaymentsService,
+    private readonly paymentResultPublisherService: PaymentResultPublisherService,
   ) {}
 
   private validateMessage(message: PaymentOrderMessage): boolean {
@@ -46,35 +50,31 @@ export class PaymentConsumerService implements OnModuleInit {
     return true;
   }
 
-  private processPaymentOrder(message: PaymentOrderMessage): void {
-    const startTime = Date.now();
+  private async processPaymentOrder(
+    message: PaymentOrderMessage,
+  ): Promise<void> {
     try {
-      // Log inicial com informações da mensagem
-      this.logger.log(
-        `📝 Processing payment order: ` +
-          `orderId=${message.orderId}, ` +
-          `userId=${message.userId}, ` +
-          `amount=${message.amount}`,
-      );
-
       if (!this.validateMessage(message)) {
         this.logger.error('❌ Invalid payment message received');
         throw new Error('Invalid payment message received');
       }
+      const payment = await this.paymentsService.processPayment(message);
 
-      // TODO: Processar pagamento usando PaymentsService
-      // Isso será implementado na próxima aula
-      this.logger.log('✅ Payment order received and validated');
-      this.metricsService.updateMetrics(true, startTime, this.logger);
+      try {
+        await this.paymentResultPublisherService.publishPaymentResult(payment);
+      } catch (publishError) {
+        this.logger.error(
+          `⚠️ Failed to publish payment result for orderId=${message.orderId}, payment is saved and can be queried via REST`,
+          publishError,
+        );
+      }
+
+      this.logger.log('✅ Payment order processed successfully');
     } catch (error) {
-      this.metricsService.updateMetrics(false, startTime, this.logger);
-      // Log de erro com contexto completo
       this.logger.error(
         `❌ Failed to process payment for order ${message.orderId}:`,
         error,
       );
-
-      // IMPORTANTE: Relançamos o erro para o RabbitMQ fazer NACK
       throw error;
     }
   }
