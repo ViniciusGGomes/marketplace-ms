@@ -3,14 +3,24 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
+export enum UserRole {
+  SELLER = 'SELLER',
+  BUYER = 'BUYER',
+}
+
 interface JwtPayload {
   sub: string;
   email: string;
-  role: string;
+  role: UserRole;
   iat?: number;
   exp?: number;
 }
 
+export interface AuthenticatedUser {
+  userId: string;
+  email: string;
+  role: UserRole;
+}
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
@@ -23,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // O Passport já usou a secret acima para validar se a assinatura do token é real e se não expirou.
   // Se chegou aqui, o token É VÁLIDO.
-  validate(payload: JwtPayload) {
+  validate(payload: JwtPayload): AuthenticatedUser {
     if (!payload) {
       throw new UnauthorizedException('Invalid token payload');
     }
