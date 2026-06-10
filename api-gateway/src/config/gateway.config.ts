@@ -8,11 +8,11 @@ export const serviceConfig = {
     timeout: 10000,
   },
   checkout: {
-    url: process.env.CHECKOUT_SERVICE_URL || 'http://localhost:3002',
+    url: process.env.CHECKOUT_SERVICE_URL || 'http://localhost:3003',
     timeout: 10000,
   },
   payments: {
-    url: process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3003',
+    url: process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004',
     timeout: 10000,
   },
 } as const;
