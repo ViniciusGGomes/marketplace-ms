@@ -7,7 +7,7 @@ import { ProxyService } from 'src/proxy/service/proxy.service';
 export class PaymentsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  @Get('orderId')
+  @Get(':orderId')
   async getPaymentByOrderID(
     @Param('orderId') orderId: string,
     @Headers('authorization') authorization: string,
