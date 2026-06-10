@@ -1,65 +1,269 @@
-# Marketplace Microservices - API Gateway 🚀
+# Marketplace - API Gateway
 
-Este repositório contém a implementação da **API Gateway**, o ponto central de entrada para o ecossistema de microsserviços do marketplace. O projeto foi desenhado seguindo princípios de escalabilidade independente, isolamento de falhas, resiliência avançada e segurança.
+O **API Gateway** atua como a camada de borda corporativa e o ponto único de entrada para o ecossistema de microsserviços do Marketplace. É responsável por centralizar requisições provenientes de aplicações Frontend, Mobile e clientes HTTP, realizando o roteamento inteligente para os serviços especializados do ecossistema.
 
-## 🏗️ Arquitetura do Sistema
-
-O sistema é composto por domínios principais, cada um com a sua responsabilidade e base de dados própria (padrão _Database per Service_):
-
-- **API Gateway**: Única porta de entrada para os clientes. Gerencia o roteamento, autenticação unificada, telemetria de saúde e proteção resiliente da infraestrutura.
-- **Users Service**: Gestão de usuários, perfis e persistência segura de credenciais.
-- **Product Service**: Catálogo de produtos e gestão de inventário.
-- **Checkout Service**: Orquestração do carrinho de compras e criação de ordens de pedido.
-- **Payment Service**: Processamento financeiro integrado a gateways de pagamento.
+Sua arquitetura foi projetada com foco em **alta disponibilidade**, **segurança**, **resiliência** e **observabilidade ponta a ponta**.
 
 ---
 
-## 🛡️ Mecanismos de Resiliência (Pipeline em Camadas)
+# 🏛️ Recursos e Padrões Arquiteturais
 
-Para garantir que a arquitetura não colapse em cenários de instabilidade de rede ou quedas parciais de microsserviços, o `ProxyService` implementa uma **esteira de resiliência concêntrica (padrão Matrioska)**. Cada requisição síncrona passa por três barreiras de defesa antes de acionar uma estratégia de mitigação:
+## Reverse Proxy
 
-1. **Camada 1: Circuit Breaker (Estabilidade Global)**
-   - **Papel**: Funciona como um disjuntor de proteção. Se um microsserviço registrar 3 falhas consecutivas, o circuito se abre por 30 segundos (`failureThreshold: 3`).
-   - **Benefício**: Evita o esgotamento de recursos do Gateway e impede o efeito cascata, bloqueando requisições a serviços instáveis e dando tempo para que eles se recuperem.
+Realiza o redirecionamento transparente de requisições para os microsserviços internos através do `ProxyModule`, ocultando a topologia da infraestrutura e centralizando o acesso externo.
 
-2. **Camada 2: Retry Adaptativo (Recuperação de Falhas Transientes)**
-   - **Papel**: Caso a requisição falhe por um erro lógico imediato (como HTTP 500) ou estoure o tempo limite, o sistema realiza até **4 retentativas** automáticas.
-   - **Exponential Backoff & Jitter**: O tempo de espera cresce exponencialmente a cada falha, e o algoritmo de **Jitter** introduz um ruído aleatório nesses milissegundos. Isso distribui o tráfego e evita o _Thundering Herd Problem_ (efeito manada) quando o microsserviço volta a ficar online.
+## Autenticação Centralizada
 
-3. **Camada 3: Timeout Estrito (Proteção de Thread)**
-   - **Papel**: Estabelece um teto rígido de tempo configurado por serviço (ex: 5 segundos).
-   - **Benefício**: Se um microsserviço travar ou demorar demais em um processamento pesado, o Gateway corta a conexão de forma limpa via `Promise.race`, liberando a memória e acionando as tentativas do Retry.
+O `AuthModule` intercepta e valida tokens JWT recebidos via Bearer Token, propagando informações do usuário para os serviços internos através dos seguintes cabeçalhos:
 
-4. **Camada de Escape: Fallback dinâmico e Cache Automatizado**
-   - Se todas as barreiras falharem ou o circuito estiver aberto, a requisição é interceptada por uma estratégia de degradação graciosa:
-     - **Cache Fallback (Consultas GET)**: Devolve dados previamente cacheados na memória (como a lista de produtos), mantendo o app funcional para o cliente.
-     - **Default Fallback (Comandos POST/PUT/DELETE)**: Retorna respostas padronizadas e amigáveis de indisponibilidade temporária.
+- `x-user-id`
+- `x-user-email`
+- `x-user-role`
 
----
+## Fault Tolerance
 
-## 🔬 Observabilidade e Diagnóstico (Health Checks)
+### Timeout Controlado
 
-O Gateway expõe o módulo `HealthModule`, fornecendo endpoints estratégicos para monitoramento humano e integração com orquestradores de infraestrutura em nuvem (como Kubernetes ou AWS ECS):
+Implementado pelo `TimeoutModule`, limita o tempo máximo de resposta dos microsserviços para evitar bloqueios no Gateway.
 
-- **`GET /health`**: Verifica de forma rápida a integridade e saúde do próprio processo do API Gateway (Uptime, memória e versão).
-- **`GET /health/services`**: Varre e agrega concorrentemente (`Promise.allSettled`) o estado de todos os microsserviços do ecossistema, determinando se o status global está `HEALTHY` ou `DEGRADED`.
-- **`GET /health/ready`** e **`GET /health/live`**: Probes padronizadas de _Readiness_ e _Liveness_ para sinalizar aos gerenciadores de container se o gateway está pronto para receber tráfego.
+### Retry com Backoff Exponencial
 
----
+Executa novas tentativas automáticas em falhas transitórias de rede utilizando estratégias de retentativa progressiva.
 
-## 🔒 Implementações de Segurança
+### Circuit Breaker
 
-- **Helmet**: Configuração de cabeçalhos HTTP seguros para mitigar vulnerabilidades web comuns.
-- **CORS Avançado**: Controle rígido de origens, métodos HTTP e cabeçalhos permitidos.
-- **Advanced Rate Limiting**: Implementado via `@nestjs/throttler` em três níveis de granularidade (curto, médio e longo prazo) para prevenir ataques de negação de serviço (DoS) e abusos de API.
-- **Validação Global**: Uso de `ValidationPipe` corporativo com `whitelist` e `forbidNonWhitelisted` ativos para sanetização estrita de payloads.
+Interrompe chamadas para serviços degradados quando o limite de falhas configurado é atingido, prevenindo falhas em cascata.
+
+### Fallback Inteligente
+
+Quando um serviço está indisponível, o Gateway pode retornar dados em cache ou respostas alternativas por meio do `CacheFallbackService`.
+
+## Métricas e Observabilidade
+
+Coleta métricas seguindo o padrão **RED (Requests, Errors, Duration)** utilizando `prom-client` e o middleware global `HttpMetricsMiddleware`.
+
+Compatível com integração ao Prometheus e Grafana.
 
 ---
 
-## 🛠️ Tecnologias e Ferramentas
+# 🔒 Segurança
 
-- **Framework Principal**: NestJS (TypeScript)
-- **Infraestrutura & Containers**: Docker & Docker Compose
-- **Comunicação Síncrona**: Axios (`@nestjs/axios` + RxJS Observers)
-- **Comunicação Assíncrona**: RabbitMQ (Arquitetura orientada a eventos/Event-driven)
-- **Documentação Viva**: Swagger UI (OpenAPI)
+## Helmet
+
+Configuração automática de cabeçalhos HTTP para mitigação de vulnerabilidades comuns:
+
+- XSS
+- Clickjacking
+- MIME Sniffing
+
+## CORS
+
+Controle explícito de:
+
+- Origens permitidas
+- Métodos HTTP
+- Cabeçalhos autorizados
+
+## Rate Limiting
+
+Implementado com `@nestjs/throttler` através do `CustomThrottlerGuard`.
+
+| Nível  | Limite         |
+| ------ | -------------- |
+| Short  | 10 req/s       |
+| Medium | 100 req/min    |
+| Long   | 1000 req/15min |
+
+Proteção contra:
+
+- Ataques DoS
+- Scripts automatizados
+- Abuso de APIs
+
+---
+
+## 🔬 Diagnóstico de Infraestrutura (Health Check)
+
+O Gateway expõe um endpoint único e estratégico para monitorar a integridade da malha privada de microsserviços através do `HealthModule` utilizando o NestJS Terminus:
+
+- **`GET /health`**: Executa testes de conectividade ativos concorrentemente contra os endpoints locais de cada microsserviço cadastrado (`users`, `products`, `checkout` e `payments`).
+  - **Status 200 OK:** Sinaliza que todos os microsserviços do ecossistema estão online, comunicando-se perfeitamente e prontos para receber tráfego.
+  - **Status 503 Service Unavailable:** Disparado de forma automática caso algum dos microsserviços upstream fique offline ou sofra degradação crítica, permitindo auditoria humana imediata e integração com ferramentas de alerta.
+
+# 🛠️ Tecnologias
+
+## Backend
+
+- NestJS
+- TypeScript
+
+## Comunicação
+
+- Axios
+- RabbitMQ
+
+## Infraestrutura
+
+- Docker
+- Docker Compose
+
+## Documentação
+
+- Swagger UI
+
+## Monitoramento
+
+- Prometheus
+- prom-client
+
+---
+
+# 📦 Estrutura do Projeto
+
+```text
+src/
+├── auth/          # JWT, Guards e autenticação
+├── checkout/      # Proxy para carrinho e pedidos
+├── common/        # Circuit Breaker, Retry, Timeout e Fallback
+├── config/        # Configurações globais e URLs dos serviços
+├── guards/        # CustomThrottlerGuard
+├── health/        # Endpoints de monitoramento
+├── middleware/    # Logging e auditoria
+├── metrics/       # Métricas Prometheus
+├── payments/      # Proxy do serviço de pagamentos
+├── products/      # Proxy do catálogo e estoque
+└── users/         # Proxy de usuários e autenticação
+```
+
+---
+
+# ⚙️ Variáveis de Ambiente
+
+```env
+PORT=3005
+
+# JWT
+JWT_SECRET=secret
+
+# Microsserviços
+USERS_SERVICE_URL=http://localhost:3000
+PRODUCTS_SERVICE_URL=http://localhost:3001
+CHECKOUT_SERVICE_URL=http://localhost:3003
+PAYMENTS_SERVICE_URL=http://localhost:3004
+
+# CORS
+CORS_ORIGIN=*
+```
+
+---
+
+# 🎯 Responsabilidades do Gateway
+
+- Centralizar o acesso ao ecossistema de microsserviços.
+- Aplicar autenticação e autorização na borda.
+- Implementar mecanismos de resiliência distribuída.
+- Monitorar tráfego e desempenho da plataforma.
+- Proteger os serviços internos contra abusos e ataques.
+- Fornecer observabilidade operacional para infraestrutura e negócio.
+
+---
+
+# 🛣️ Matriz de Roteamento Unificada (Porta 3005)
+
+| Método | Endpoint Externo             | Destino Interno (Upstream)                           | Autenticação | Proteções Ativas                |
+| ------ | ---------------------------- | ---------------------------------------------------- | ------------ | ------------------------------- |
+| POST   | `/auth/register`             | users-service (`:3000/auth/register`)                | Pública      | Throttler, ValidationPipe       |
+| POST   | `/auth/login`                | users-service (`:3000/auth/login`)                   | Pública      | Throttler, ValidationPipe       |
+| GET    | `/auth/validate-token`       | users-service (`:3000/auth/validate-token`)          | Requer JWT   | Throttler                       |
+| GET    | `/users/profile`             | users-service (`:3000/users/profile`)                | Requer JWT   | Throttler                       |
+| GET    | `/users/sellers`             | users-service (`:3000/users/sellers`)                | Requer JWT   | Throttler                       |
+| GET    | `/users/:id`                 | users-service (`:3000/users/:id`)                    | Requer JWT   | Throttler                       |
+| POST   | `/products`                  | products-service (`:3001/products`)                  | Requer JWT   | Throttler, ValidationPipe       |
+| GET    | `/products`                  | products-service (`:3001/products`)                  | Pública      | Cache, Timeout, Circuit Breaker |
+| GET    | `/products/:id`              | products-service (`:3001/products/:id`)              | Pública      | Cache, Timeout, Circuit Breaker |
+| GET    | `/products/seller/:sellerId` | products-service (`:3001/products/seller/:sellerId`) | Pública      | Cache, Timeout, Circuit Breaker |
+| POST   | `/cart/items`                | checkout-service (`:3003/cart/items`)                | Requer JWT   | Timeout, Retry, ValidationPipe  |
+| GET    | `/cart`                      | checkout-service (`:3003/cart`)                      | Requer JWT   | Timeout, Retry                  |
+| DELETE | `/cart/items/:itemId`        | checkout-service (`:3003/cart/items/:itemId`)        | Requer JWT   | Timeout, Retry                  |
+| POST   | `/cart/checkout`             | checkout-service (`:3003/cart/checkout`)             | Requer JWT   | Timeout, Retry, ValidationPipe  |
+| GET    | `/orders`                    | checkout-service (`:3003/orders`)                    | Requer JWT   | Timeout, Retry                  |
+| GET    | `/orders/:id`                | checkout-service (`:3003/orders/:id`)                | Requer JWT   | Timeout, Retry                  |
+| GET    | `/payments/:orderId`         | payments-service (`:3004/payments/:orderId`)         | Requer JWT   | Timeout, Retry, Fallback        |
+| GET    | `/health`                    | Interno (Terminus Probes)                            | Pública      | Nenhuma (Ignora Throttler)      |
+| GET    | `/metrics`                   | Interno (Prometheus Exporter)                        | Pública      | Nenhuma (Ignora Throttler)      |
+
+---
+
+## 🚀 Como Rodar o Serviço
+
+Siga os passos abaixo para instalar as dependências e iniciar o API Gateway localmente.
+
+### 📋 Pré-requisitos
+
+- **Node.js** (v18 ou superior)
+- **Docker**
+- **Docker Compose**
+
+---
+
+### 🛠️ Instalação das Dependências
+
+Instale as dependências do projeto:
+
+```bash
+npm install
+```
+
+---
+
+### 🐳 Subindo a Infraestrutura
+
+Caso os microsserviços e dependências estejam conteinerizados, inicie os containers necessários:
+
+```bash
+docker compose up -d
+```
+
+Verifique se todos os serviços necessários estão em execução antes de iniciar o Gateway.
+
+---
+
+### ▶️ Executando o API Gateway
+
+Inicie a aplicação em modo de desenvolvimento com Hot Reload:
+
+```bash
+npm run start:dev
+```
+
+---
+
+### 🌐 Acesso
+
+Após a inicialização, o API Gateway estará disponível em:
+
+```text
+http://localhost:3005
+```
+
+---
+
+### 📚 Documentação Swagger
+
+A documentação interativa da API pode ser acessada em:
+
+```text
+http://localhost:3005/api
+```
+
+---
+
+### 📈 Métricas Prometheus & Grafana
+
+Endpoint utilizado para coleta ativa de telemetria:
+
+```text
+GET http://localhost:3005/metrics
+```
+
+---
