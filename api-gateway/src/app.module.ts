@@ -1,6 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ProxyModule } from './proxy/proxy.module';
@@ -10,7 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './guards/custom-throttler.guard';
 import { HealthModule } from './health/health.module';
-import { HealthCheckModule } from './common/health/health-check.module';
 import { FallbackModule } from './common/fallback/fallback.module';
 import { CircuitBreakerModule } from './common/circuit-breaker/circuit-breaker.module';
 import { TimeoutModule } from './common/timeout/timeout.module';
@@ -18,6 +15,10 @@ import { RetryModule } from './common/retry/retry.module';
 import { UsersModule } from './users/users.module';
 import { ProductsController } from './products/products.controller';
 import { ProductsModule } from './products/products.module';
+import { CheckoutModule } from './checkout/checkout.module';
+import { PaymentsModule } from './payments/payments.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { HttpMetricsMiddleware } from './metrics/http-metrics.middleware';
 
 @Module({
   imports: [
@@ -49,17 +50,18 @@ import { ProductsModule } from './products/products.module';
     MiddlewareModule,
     AuthModule,
     HealthModule,
-    HealthCheckModule,
     FallbackModule,
     CircuitBreakerModule,
     TimeoutModule,
     RetryModule,
     UsersModule,
     ProductsModule,
+    CheckoutModule,
+    PaymentsModule,
+    MetricsModule,
   ],
-  controllers: [AppController, ProductsController],
+  controllers: [ProductsController],
   providers: [
-    AppService,
     {
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,
@@ -68,6 +70,7 @@ import { ProductsModule } from './products/products.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpMetricsMiddleware).forRoutes('*');
     consumer.apply(LoggingMiddleware).forRoutes('*');
   }
 }
