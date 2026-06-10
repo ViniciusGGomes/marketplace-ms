@@ -14,6 +14,7 @@ import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { ProxyService } from 'src/proxy/service/proxy.service';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
+import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 
 @Controller('auth')
 export class AuthProxyController {
@@ -41,7 +42,7 @@ export class AuthProxyController {
   @UseGuards(JwtAuthGuard)
   validateToken(
     @Headers('authorization') authHeader: string,
-    @CurrentUser() user: { userId: string; email: string; role: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.proxyService.proxyRequest(
       'users',

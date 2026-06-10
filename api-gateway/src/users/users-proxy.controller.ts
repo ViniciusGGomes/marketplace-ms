@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Headers } from '@nestjs/common';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { ProxyService } from 'src/proxy/service/proxy.service';
 
 @Controller('users')
@@ -9,7 +10,7 @@ export class UsersProxyController {
   @Get('profile')
   getProfile(
     @Headers('authorization') authHeader: string,
-    @CurrentUser() user: { userId: string; email: string; role: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.proxyService.proxyRequest(
       'users',
@@ -24,7 +25,7 @@ export class UsersProxyController {
   @Get('sellers')
   getActiveSellers(
     @Headers('authorization') authHeader: string,
-    @CurrentUser() user: { userId: string; email: string; role: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.proxyService.proxyRequest(
       'users',
@@ -40,7 +41,7 @@ export class UsersProxyController {
   getById(
     @Param('id') id: string,
     @Headers('authorization') authHeader: string,
-    @CurrentUser() user: { userId: string; email: string; role: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.proxyService.proxyRequest(
       'users',
