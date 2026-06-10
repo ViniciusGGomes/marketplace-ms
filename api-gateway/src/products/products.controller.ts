@@ -2,6 +2,7 @@ import { Body, Controller, Post, Headers, Get, Param } from '@nestjs/common';
 import { ProxyService } from 'src/proxy/service/proxy.service';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 
 @Controller('products')
 export class ProductsController {
@@ -11,7 +12,7 @@ export class ProductsController {
   async create(
     @Body() body: CreateProductDto,
     @Headers('authorization') authorization: string,
-    @CurrentUser() user: { userId: string; email: string; role: string },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.proxyService.proxyRequest(
       'products',
