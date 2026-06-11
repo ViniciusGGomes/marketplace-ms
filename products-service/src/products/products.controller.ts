@@ -9,8 +9,10 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
-import { UserRole } from './enums/user-role';
+import {
+  UserRole,
+  type AuthenticatedUser,
+} from 'src/auth/strategies/jwt.strategy';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { Product } from './entities/product.entity';
 
