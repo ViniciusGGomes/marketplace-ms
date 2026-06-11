@@ -12,30 +12,30 @@ import { Exclude } from 'class-transformer';
 @Entity('user')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', unique: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar' })
   @Exclude()
-  password: string;
+  password!: string;
 
   @Column({ type: 'varchar' })
-  firstName: string;
+  firstName!: string;
 
   @Column({ type: 'varchar' })
-  lastName: string;
+  lastName!: string;
 
   @Column({ type: 'enum', enum: UserRole })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
-  status: UserStatus;
+  status!: UserStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
