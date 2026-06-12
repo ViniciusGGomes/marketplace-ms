@@ -11,7 +11,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { CheckoutDto } from 'src/cart/dtos/checkout.dto';
 import { Order } from './entities/order.entity';
 
-@Controller('orders')
+@Controller()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 

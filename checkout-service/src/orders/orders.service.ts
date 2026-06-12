@@ -43,16 +43,16 @@ export class OrdersService {
     const paymentMessage: PaymentOrderMessage = {
       orderId: saveOrder.id,
       userId,
-      amount: Number(saveOrder.amount),
+      amount: parseFloat(saveOrder.amount.toString()),
       items: cart.items.map((item) => ({
         productId: item.productId,
-        quantity: item.quantity,
-        price: Number(item.price),
+        quantity: Number(item.quantity),
+        price: parseFloat(item.price.toString()),
       })),
       paymentMethod: dto.paymentMethod,
     };
 
-    await this.paymentQueueService.publishPaymentOrder(paymentMessage);
+    await this.paymentQueueService.publicPaymentOrderSafe(paymentMessage);
 
     return saveOrder;
   }
