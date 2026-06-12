@@ -1,4 +1,4 @@
-# 🚀 Marketplace Microservices
+# Marketplace Microservices
 
 Este repositório centraliza a arquitetura distribuída do Marketplace, construída com foco em microsserviços, comunicação orientada a eventos, resiliência operacional e observabilidade em tempo real.
 
@@ -12,6 +12,20 @@ A plataforma foi projetada seguindo os princípios de:
 * Observabilidade ponta a ponta
 
 ---
+
+## 📦 Estrutura do Ecossistema
+
+O projeto está dividido nos seguintes módulos e serviços:
+
+* **[- API Gateway](./api-gateway):** Ponto de entrada e segurança do sistema (Rate Limiting, Autenticação e Circuit Breaker).
+* **[- Checkout Service](./checkout-service):** Gerenciamento do ciclo de vida de carrinhos de compras e processamento inicial de pedidos.
+* **[- Messaging Service](./messaging-service):** Orquestração e configuração de tópicos, exchanges e filas de mensageria com o RabbitMQ.
+* **[- Observability Stack](./observability-stack):** Centralização e provisionamento de métricas e dashboards em tempo real usando Prometheus e Grafana.
+* **[- Payments Service](./payments-service):** Motor assíncrono para processamento de pagamentos e validação de transações financeiras.
+* **[- Products Service](./products-service):** Domínio responsável pelo catálogo, estoque e gerenciamento de permissões de vendedores.
+* **[- Users Service](./users-service):** Serviço central de identidade, autenticação e gerenciamento de perfis de usuários.
+
+--
 
 # 🏛️ Visão Geral da Arquitetura
 
@@ -47,20 +61,6 @@ Utilizada para operações que exigem resposta imediata.
 * Validação de estoque.
 * Comunicação entre API Gateway e microsserviços.
 
-### Fluxo
-
-```text
-Cliente
-   │
-   ▼
-API Gateway
-   │
-   ├── Users Service
-   ├── Products Service
-   ├── Checkout Service
-   └── Payments Service
-```
-
 ---
 
 ## 📨 Comunicação Assíncrona (Event-Driven)
@@ -75,28 +75,14 @@ Utilizada em processos de negócio que podem ser executados de forma desacoplada
 * Tolerância a falhas.
 * Consistência eventual.
 
-### Fluxo de Pagamentos
-
-```text
-Checkout Service
-       │
-       ▼
- RabbitMQ Exchange
-       │
-       ▼
- Payments Service
-       │
-       ▼
- payment.result
-       │
-       ▼
- Checkout Service
-```
-
 ---
 
 # 🗺️ Visão Geral da Arquitetura
- IMAGEM DA ULTIMA AULA - DE TODA A ARQUITETURA
+
+<p align="center">
+  <img width="5156" height="5513" alt="Image" src="https://github.com/user-attachments/assets/b46d0f3c-a25c-4f31-892b-f0f48944281e" />
+</p>
+
 ---
 
 # 📊 Observabilidade
@@ -136,7 +122,7 @@ Porta:
 ```text
 3010
 ```
-IMAGEM DO SSERVICÇOS FUNCIOANDNOS NO GRAFANA
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/81af006c-2808-42f5-9174-76d7d087d755" />
 
 ---
 
