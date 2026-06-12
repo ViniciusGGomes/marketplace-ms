@@ -42,7 +42,7 @@ Responsabilidades:
 O fluxo de processamento do serviço divide-se em três grandes pipelines lógicos, detalhados de forma visual no diagrama de arquitetura orientada a eventos abaixo:
 
 <p align="center">
-  <img src="./assets/checkout-flow.png" alt="Fluxo de Checkout e Request-Reply com RabbitMQ" width="100%">
+  <img width="1474" height="847" alt="Image" src="https://github.com/user-attachments/assets/528cecde-739e-45bb-9f3b-d1171588e584" />
 </p>
 
 Durante o startup da aplicação:
