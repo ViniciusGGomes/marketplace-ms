@@ -110,14 +110,26 @@ export class CartService {
       throw new NotFoundException('Carrinho não encontrado');
     }
 
-    const item = cart.items.find((i) => i.id === itemId);
+    const itemIndex = cart.items.findIndex((i) => i.id === itemId);
 
-    if (!item) {
+    if (itemIndex === -1) {
       throw new NotFoundException('Item não encontrado no carrinho');
     }
 
-    await this.cartItemRepository.remove(item);
+    // 1. Pega a referência do item para remover do banco
+    const itemToRemove = cart.items[itemIndex];
+    await this.cartItemRepository.remove(itemToRemove);
 
+    // 2. Remove o item do array da memória para o recálculo ser perfeito
+    cart.items.splice(itemIndex, 1);
+
+    // 3. Se o carrinho ficou vazio, zera o total direto
+    if (cart.items.length === 0) {
+      cart.total = 0;
+      return await this.cartRepository.save(cart);
+    }
+
+    // 4. Se ainda restam itens, dispara o recálculo e atualiza o total no banco
     return (await this.getActiveCartWithItems(userId)) as Cart;
   }
 

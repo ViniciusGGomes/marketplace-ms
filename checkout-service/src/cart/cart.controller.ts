@@ -30,7 +30,7 @@ export class CartController {
 
   @Delete('items/:itemId')
   removeItem(
-    @CurrentUser() userId: string,
+    @CurrentUser('id') userId: string,
     @Param('itemId', ParseUUIDPipe) itemId: string,
   ) {
     return this.cartService.removeItem(userId, itemId);
