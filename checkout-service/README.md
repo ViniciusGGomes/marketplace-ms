@@ -35,7 +35,7 @@ Após o processamento do pagamento:
 O fluxo de processamento do serviço divide-se em três grandes pipelines lógicos, detalhados de forma visual no diagrama de arquitetura orientada a eventos abaixo:
 
 <p align="center">
-  <img src="./assets/checkout-flow.png" alt="Fluxo de Checkout e Request-Reply com RabbitMQ" width="100%">
+  <img width="1586" height="801" alt="Image" src="https://github.com/user-attachments/assets/fff10c45-49bd-468d-b32b-d480d7d5cee5" />
 </p>
 
 ## A. Gestão do Carrinho
