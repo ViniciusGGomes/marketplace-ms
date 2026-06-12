@@ -2,7 +2,6 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PaymentQueueService } from '../payment-queue/payment-queue.service';
 import { PaymentOrderMessage } from '../payment-queue.interface';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
-import { MetricsService } from '../metrics/metrics.service';
 import { PaymentsService } from 'src/payments/payments.service';
 import { PaymentResultPublisherService } from '../payment-result-publish/payment-result-publisher.service';
 
@@ -13,7 +12,6 @@ export class PaymentConsumerService implements OnModuleInit {
   constructor(
     private readonly paymentQueueService: PaymentQueueService,
     private readonly rabbitMQService: RabbitMQService,
-    private readonly metricsService: MetricsService,
     private readonly paymentsService: PaymentsService,
     private readonly paymentResultPublisherService: PaymentResultPublisherService,
   ) {}
@@ -104,7 +102,6 @@ export class PaymentConsumerService implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('🚀 Starting Payment Consumer Service');
-    this.metricsService.metrics.startedAt = new Date();
     await this.startConsuming();
   }
 }
