@@ -167,6 +167,8 @@ Acesse:
 ```text
 http://localhost:15672
 ```
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/404ec980-3601-42b7-bdaa-602f4a1d22c4" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/9ea11abb-fd78-46f9-8ca7-e18bb342f9ac" />
 
 Permite monitorar:
 
