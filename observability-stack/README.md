@@ -3,7 +3,7 @@
 O **Observability Stack** é o módulo responsável pela telemetria, monitoramento e observabilidade do Marketplace. Ele centraliza a coleta, armazenamento e visualização de métricas utilizando **Prometheus** e **Grafana**, permitindo acompanhamento em tempo real da saúde dos microsserviços e da infraestrutura.
 
 <p align="center">
-  <img src="./assets/checkout-flow.png" alt="Fluxo de Checkout e Request-Reply com RabbitMQ" width="100%">
+  <img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/d9abce2f-e677-4bac-9974-dc39f0c1568b" />
 </p>
 
 ---
