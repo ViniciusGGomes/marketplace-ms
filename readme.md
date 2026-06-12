@@ -134,13 +134,30 @@ Porta:
 
 ---
 
-# 🎯 Objetivos da Arquitetura
+# 🛠️ Metodologia de Desenvolvimento (AI-Driven Engineering)
 
-* Separar responsabilidades por domínio.
-* Permitir evolução independente dos serviços.
-* Garantir disponibilidade da plataforma.
-* Facilitar manutenção e escalabilidade.
-* Reduzir acoplamento entre componentes.
-* Implementar comunicação orientada a eventos.
-* Fornecer monitoramento centralizado.
-* Garantir observabilidade completa do ecossistema.
+Mais do que a implementação física da arquitetura, o ciclo de vida deste projeto foi guiado por **Engenharia de Prompts avançada**, utilizando inteligência artificial de forma estruturada para garantir previsibilidade, documentação rigorosa e blindagem de software.
+
+O fluxo de trabalho seguiu rigorosamente o pipeline mapeado abaixo:
+
+<p align="center">
+  <img width="1010" height="229" alt="Image" src="https://github.com/user-attachments/assets/2039b612-0617-43ba-be0d-7033533ecacc" />
+</p>
+
+### 🔄 Etapas do Pipeline
+
+1. **Criação da Spec:** Utilização de prompts especializados para gerar especificações técnicas detalhadas de cada componente (ex: contratos de mensageria e regras de negócio).
+2. **Análise (PR da Spec):** Revisão estática humana/IA do escopo proposto para validação de contratos antes da escrita de qualquer linha de código.
+3. **Plano de Desenvolvimento:** Desdobramento automático da especificação em tarefas atômicas, mapeando arquivos afetados, dependências e assinaturas de métodos.
+4. **Testes e Implementação:** Escrita paralela do código de negócio e dos testes automatizados (E2E e unitários) orientados estritamente pelas diretrizes do plano.
+5. **Análise Final (PR de Código):** Code review automatizado focado em segurança, boas práticas do ecossistema NestJS e cobertura de testes.
+
+---
+
+# 🎯 Objetivos Concluídos da Arquitetura
+
+* **Isolamento de Domínio:** Separação estrita de responsabilidades por microsserviço.
+* **Evolução Independente:** Liberdade para escalar e alterar serviços sem gerar efeitos colaterais na malha privada.
+* **Resiliência Nativa:** Minimização de falhas em cascata com comunicação assíncrona baseada em eventos.
+* **Observabilidade Total:** Telemetria centralizada em tempo real para tomada de decisões operacionais.
+* **Garantia de Qualidade:** Código limpo e validado de forma previsível através do pipeline de IA.
