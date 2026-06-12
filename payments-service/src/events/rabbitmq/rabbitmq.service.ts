@@ -91,7 +91,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     return this.channel;
   }
 
-  getConnections(): amqp.ChannelModel {
+  getConnection(): amqp.ChannelModel {
     return this.connection;
   }
 
