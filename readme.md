@@ -25,7 +25,15 @@ O projeto está dividido nos seguintes módulos e serviços:
 * **[- Products Service](./products-service):** Domínio responsável pelo catálogo, estoque e gerenciamento de permissões de vendedores.
 * **[- Users Service](./users-service):** Serviço central de identidade, autenticação e gerenciamento de perfis de usuários.
 
---
+### 🐳 Ambiente Conteinerizado (Orquestração Local)
+
+Toda a malha de microsserviços e seus respectivos bancos de dados/brokers de infraestrutura são orquestrados localmente via Docker Compose, garantindo isolamento e paridade de ambiente:
+
+<p align="center">
+  <img width="1578" height="661" alt="Image" src="https://github.com/user-attachments/assets/c87161dd-87e0-4844-b3e4-2ed3ab36909c" />
+</p>
+
+---
 
 # 🏛️ Visão Geral da Arquitetura
 
