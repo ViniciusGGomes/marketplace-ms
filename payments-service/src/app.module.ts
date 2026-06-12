@@ -1,16 +1,24 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './config/database.config';
 import { EventsModule } from './events/events.module';
-import { HealthController } from './health/health.controller';
 import { PaymentsModule } from './payments/payments.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { HttpMetricsMiddleware } from './metrics/http-metrics.middleware';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
     EventsModule,
     PaymentsModule,
+    MetricsModule,
+    HealthModule,
   ],
-  controllers: [HealthController],
+  controllers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpMetricsMiddleware).forRoutes('*');
+  }
+}
